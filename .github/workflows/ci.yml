@@ -1,33 +1,46 @@
-name: Pipeline de CI - Testes
+name: Pipeline de CI/CD - Teste e Deploy
 
 # Define quando este workflow deve rodar
 on:
-  push: # Roda em qualquer 'push' para qualquer branch
-  pull_request: # Roda em qualquer abertura ou atualização de 'pull request'
+  push:
+    branches: [ "main" ] # Só roda deploy em pushes para a 'main'
+  pull_request:
+    branches: [ "main" ] # Roda testes em PRs para a 'main'
 
-# Define os "trabalhos" (jobs) que a pipeline executará
+# Define os "trabalhos" que a pipeline executará
 jobs:
-  # O nome do nosso job (pode ser qualquer nome)
+  # TESTE
   build_and_test:
-    # A máquina virtual que o GitHub usará para rodar o job
+    name: Testar Aplicação
     runs-on: ubuntu-latest
-
-    # Os passos (steps) que o job executará em ordem
     steps:
-      #Baixa o código do seu repositório para a máquina virtual
       - name: Baixar o código (Checkout)
         uses: actions/checkout@v4
 
-      #Configura o ambiente Node.js na máquina virtual
       - name: Configurar Node.js v18
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Você pode mudar para a versão que preferir
+          node-version: '18'
+          cache: 'npm' # Adiciona cache para 'npm install' ser mais rápido
 
-      #Instala as dependências do projeto
       - name: Instalar dependências
         run: npm install
 
-      #Roda os testes
       - name: Rodar os testes
         run: npm test
+
+  # deploy
+  deploy:
+    name: Fazer Deploy no Render
+    runs-on: ubuntu-latest
+    
+    # 'needs' garante que 'deploy' só roda se 'build_and_test' passar
+    needs: build_and_test 
+    
+    # 'if' garante que o deploy só ocorre em push na 'main'
+    # (e não em pull requests)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Acionar Deploy Hook no Render
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK }}"
