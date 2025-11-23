@@ -3,7 +3,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.get('/', (req, res) => {
-  res.status(200).json({ message: 'Pipeline CI/CD funcionando!' });
+  res.status(200).json({ message: 'Pipeline CI/CD funcionando, versão2.0!' });
 });
 
 // Iniciamos o servidor apenas se não estivermos em modo de teste
